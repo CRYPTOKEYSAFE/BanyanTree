@@ -23,9 +23,11 @@ BANYAN   = HexColor("#2E6B34")
 BANYAN_D = HexColor("#1F4D2B")   # deep shield green
 BANYAN_L = HexColor("#E6F0E5")   # pale green tint for TOTAL zone
 ACCENT   = HexColor("#E07A1F")   # sunrise orange (logo)
-GRAY_L   = HexColor("#F2F2F2")   # section tint
-GRAY_M   = HexColor("#D9D9D9")
-GRAPH    = HexColor("#CCCCCC")
+PAGE_BG  = HexColor("#ECE8DD")   # warm neutral page background
+GRAY_L   = HexColor("#E2DED1")   # section tint (harmonized with page bg)
+GRAY_M   = HexColor("#C9C3B2")
+GRAPH    = HexColor("#BDB8A8")
+WHITE_B  = HexColor("#FFFFFF")   # true white for score boxes
 
 pdfmetrics.registerFont(
     TTFont("IPAGothic", "/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf")
@@ -33,7 +35,8 @@ pdfmetrics.registerFont(
 JP = "IPAGothic"
 
 PAGE_W, PAGE_H = landscape(letter)
-M = 0.35 * inch
+OUTER = 0.20 * inch     # outer page frame inset
+M = 0.38 * inch         # content margin (inside the frame)
 
 lanes = [
     ("1", "Megumi Iha"),
@@ -56,28 +59,37 @@ movements = [
 c = canvas.Canvas(OUT, pagesize=landscape(letter))
 
 # ============================================================
+# PAGE BACKGROUND (warm neutral — not brown, not stark white)
+# ============================================================
+c.setFillColor(PAGE_BG)
+c.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
+
+# ============================================================
 # GEOMETRY
 # ============================================================
-HEADER_H  = 0.75 * inch
-META_H    = 0.60 * inch
-WORKOUT_H = 1.90 * inch
+HEADER_H  = 0.72 * inch
+META_H    = 0.58 * inch
+WORKOUT_H = 2.00 * inch
 GAP       = 0.10 * inch
-FOOTER_H  = 0.45 * inch
+FOOTER_H  = 0.42 * inch
 
-y_header_b  = PAGE_H - HEADER_H
+page_top    = PAGE_H - OUTER     # everything lives under this
+page_bot    = OUTER
+y_header_b  = page_top - HEADER_H
 y_meta_b    = y_header_b - META_H
 y_wo_t      = y_meta_b - 0.04 * inch
 y_wo_b      = y_wo_t - WORKOUT_H
 y_grid_t    = y_wo_b - GAP
-y_grid_b    = M + FOOTER_H
+y_grid_b    = page_bot + FOOTER_H
 
 # ============================================================
 # HEADER BAND (shield-black with banyan stripe)
 # ============================================================
 c.setFillColor(INK)
-c.rect(0, y_header_b, PAGE_W, HEADER_H, fill=1, stroke=0)
+c.rect(OUTER, y_header_b, PAGE_W - 2*OUTER, HEADER_H, fill=1, stroke=0)
 c.setFillColor(BANYAN)
-c.rect(0, y_header_b - 0.08 * inch, PAGE_W, 0.08 * inch, fill=1, stroke=0)
+c.rect(OUTER, y_header_b - 0.08 * inch, PAGE_W - 2*OUTER, 0.08 * inch,
+       fill=1, stroke=0)
 
 # logo
 logo_size = 0.60 * inch
@@ -112,7 +124,7 @@ c.drawRightString(PAGE_W - M, y_header_b + 0.12 * inch,
 # META ROW
 # ============================================================
 c.setFillColor(GRAY_L)
-c.rect(0, y_meta_b, PAGE_W, META_H, fill=1, stroke=0)
+c.rect(OUTER, y_meta_b, PAGE_W - 2*OUTER, META_H, fill=1, stroke=0)
 
 meta_y_mid = y_meta_b + META_H / 2
 
@@ -140,7 +152,7 @@ for i, (label, val) in enumerate(meta):
     bx += block_w
 
 c.setStrokeColor(INK); c.setLineWidth(1.2)
-c.line(0, y_meta_b, PAGE_W, y_meta_b)
+c.line(OUTER, y_meta_b, PAGE_W - OUTER, y_meta_b)
 
 # ============================================================
 # WORKOUT PANEL — banyan header bar, white body
@@ -156,11 +168,11 @@ c.setFont(JP, 9)
 c.drawRightString(PAGE_W - M - 0.15 * inch, y_wo_t - 0.22 * inch,
                   "ワークアウト ー 10分間、以下の種目を可能な限り繰り返す。")
 
-# body
+# body (white fill so movement list stands out on warm page bg)
 body_t = y_wo_t - wh_h
 body_b = y_wo_b
-c.setStrokeColor(INK); c.setLineWidth(1.2)
-c.rect(M, body_b, PAGE_W - 2*M, body_t - body_b, stroke=1, fill=0)
+c.setFillColor(WHITE_B); c.setStrokeColor(INK); c.setLineWidth(1.2)
+c.rect(M, body_b, PAGE_W - 2*M, body_t - body_b, stroke=1, fill=1)
 # (redraw top border aligned with the green strip)
 c.setFillColor(INK); c.setFont("Helvetica-Bold", 12)
 
@@ -181,9 +193,9 @@ n = len(lanes)
 col_w = (PAGE_W - 2*M) / n
 grid_h = y_grid_t - y_grid_b
 
-# outer frame
-c.setStrokeColor(INK); c.setLineWidth(1.5)
-c.rect(M, y_grid_b, PAGE_W - 2*M, grid_h, stroke=1, fill=0)
+# outer frame (white fill so lane interiors pop against warm page bg)
+c.setFillColor(WHITE_B); c.setStrokeColor(INK); c.setLineWidth(1.5)
+c.rect(M, y_grid_b, PAGE_W - 2*M, grid_h, stroke=1, fill=1)
 
 # column headers — banyan-green lane tab on top of black name strip
 tab_h = 0.20 * inch    # green tab with LANE #
@@ -220,10 +232,10 @@ for i in range(1, n):
 body_top = y_grid_t - head_h
 
 # budget per field (sums to ~ body_h)
-TALLY_H  = 1.45 * inch
-NUM_H    = 0.46 * inch
-TOTAL_H  = 0.58 * inch
-SIG_H    = 0.33 * inch
+TALLY_H  = 1.32 * inch
+NUM_H    = 0.44 * inch
+TOTAL_H  = 0.56 * inch
+SIG_H    = 0.32 * inch
 
 def section_label(x_l, y_top, width, height, text, jp_text, tint=None):
     """Colored/tinted section label bar."""
@@ -277,11 +289,11 @@ for i in range(n):
     c.setFillColor(INK); c.setFont("Helvetica-Bold", 7.5)
     c.drawString(inner_l + 0.06 * inch, y - 0.12 * inch, "ROUNDS")
     c.drawString(inner_l + half + 0.12 * inch, y - 0.12 * inch, "EXTRA REPS")
-    # number boxes
-    c.setStrokeColor(INK); c.setLineWidth(1.0)
-    c.rect(inner_l, y - NUM_H, half, NUM_H - 0.18 * inch, stroke=1, fill=0)
+    # number boxes (white fill for write-on clarity)
+    c.setFillColor(WHITE_B); c.setStrokeColor(INK); c.setLineWidth(1.0)
+    c.rect(inner_l, y - NUM_H, half, NUM_H - 0.18 * inch, stroke=1, fill=1)
     c.rect(inner_l + half + 0.06 * inch, y - NUM_H, half, NUM_H - 0.18 * inch,
-           stroke=1, fill=0)
+           stroke=1, fill=1)
     y = y - NUM_H - 0.05 * inch
 
     # --- TOTAL REPS (banyan-filled header + tinted green fill box) ---
@@ -316,22 +328,31 @@ for i in range(n):
         y -= SIG_H
 
 # ============================================================
-# FOOTER  (shaded band)
+# FOOTER  (shaded band, inset within the outer frame)
 # ============================================================
+footer_top = page_bot + FOOTER_H - 0.05 * inch
 c.setFillColor(GRAY_L)
-c.rect(0, 0, PAGE_W, FOOTER_H - 0.05 * inch, fill=1, stroke=0)
+c.rect(OUTER, page_bot, PAGE_W - 2*OUTER, FOOTER_H - 0.05 * inch,
+       fill=1, stroke=0)
 c.setStrokeColor(INK); c.setLineWidth(1.0)
-c.line(0, FOOTER_H - 0.05 * inch, PAGE_W, FOOTER_H - 0.05 * inch)
+c.line(OUTER, footer_top, PAGE_W - OUTER, footer_top)
 
 c.setFillColor(INK); c.setFont("Helvetica-Bold", 8)
-c.drawString(M, 0.24 * inch,
+c.drawString(M, page_bot + 0.22 * inch,
              "Submit to the scoring table immediately after the heat.  "
              "Scores are final once signed.")
 c.setFillColor(MUTED); c.setFont(JP, 8.5)
-c.drawString(M, 0.10 * inch,
+c.drawString(M, page_bot + 0.08 * inch,
              "ヒート終了後、速やかに採点テーブルへご提出ください。署名後のスコアは確定となります。")
 c.setFillColor(INK); c.setFont("Helvetica-Bold", 9)
-c.drawRightString(PAGE_W - M, 0.17 * inch, "E1  ·  H1  ·  Scaled (F)")
+c.drawRightString(PAGE_W - M, page_bot + 0.15 * inch, "E1  ·  H1  ·  Scaled (F)")
+
+# ============================================================
+# OUTER FRAME  (drawn last, sits on top of everything)
+# ============================================================
+c.setStrokeColor(INK); c.setLineWidth(2.8)
+c.rect(OUTER, OUTER, PAGE_W - 2*OUTER, PAGE_H - 2*OUTER,
+       stroke=1, fill=0)
 
 c.showPage()
 c.save()
