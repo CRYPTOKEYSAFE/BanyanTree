@@ -1,14 +1,7 @@
 """
-Banyan Throwdown — judge heat card, v2.
-Event 1 / Heat 1 / Scaled (F). Landscape US Letter.
-
-Design goals:
-- White paper, bold black ink, ONE accent color (banyan green).
-- Bilingual only where it earns its place (wordmark, event title,
-  workout heading and movement names, footer instruction).
-- Tally area per lane — judges tick reps as they count.
-- Explicit vertical geometry, no overlaps.
-- Japanese (IPAGothic) never below 8pt.
+Banyan Throwdown — judge heat card, v3.
+Bolder, more defined visual hierarchy. Filled section heads,
+thicker rules, tinted scoring zones, graph-paper tally.
 """
 import os
 from reportlab.lib.pagesizes import landscape, letter
@@ -23,20 +16,24 @@ OUT = os.path.join(HERE, "mockup.pdf")
 LOGO = os.path.join(HERE, "logo.png")
 
 # Palette
-INK     = HexColor("#111111")
-MUTED   = HexColor("#6A6A6A")
-HAIR    = HexColor("#DADADA")
-BANYAN  = HexColor("#2E6B34")   # banyan green accent
-BANYAN2 = HexColor("#1F4D2B")   # deep green for TOTAL box
-ACCENT  = HexColor("#E07A1F")   # sunrise orange — used sparingly
+INK      = HexColor("#0E0E0E")
+MUTED    = HexColor("#555555")
+RULE_LT  = HexColor("#BDBDBD")
+BANYAN   = HexColor("#2E6B34")
+BANYAN_D = HexColor("#1F4D2B")   # deep shield green
+BANYAN_L = HexColor("#E6F0E5")   # pale green tint for TOTAL zone
+ACCENT   = HexColor("#E07A1F")   # sunrise orange (logo)
+GRAY_L   = HexColor("#F2F2F2")   # section tint
+GRAY_M   = HexColor("#D9D9D9")
+GRAPH    = HexColor("#CCCCCC")
 
 pdfmetrics.registerFont(
     TTFont("IPAGothic", "/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf")
 )
 JP = "IPAGothic"
 
-PAGE_W, PAGE_H = landscape(letter)       # 11" x 8.5"
-M = 0.40 * inch                          # page margin
+PAGE_W, PAGE_H = landscape(letter)
+M = 0.35 * inch
 
 lanes = [
     ("1", "Megumi Iha"),
@@ -47,7 +44,6 @@ lanes = [
     ("6", "Lisa Miller"),
 ]
 
-# (reps, English, Japanese)
 movements = [
     ("50",  "Single-Unders",                                "シングルアンダー"),
     ("40",  "Medicine Ball Bear Hug Squats (20 / 14 lb)",   "メディシンボール・ベアハグスクワット"),
@@ -58,237 +54,284 @@ movements = [
 ]
 
 c = canvas.Canvas(OUT, pagesize=landscape(letter))
-c.setStrokeColor(INK)
 
 # ============================================================
-# VERTICAL GEOMETRY  (computed top-down, all explicit)
+# GEOMETRY
 # ============================================================
-HEADER_H  = 0.70 * inch
-META_H    = 0.55 * inch
-WORKOUT_H = 1.85 * inch
-GRID_TOP_GAP = 0.12 * inch
+HEADER_H  = 0.75 * inch
+META_H    = 0.60 * inch
+WORKOUT_H = 1.90 * inch
+GAP       = 0.10 * inch
 FOOTER_H  = 0.45 * inch
 
-y_header_bottom   = PAGE_H - HEADER_H
-y_meta_bottom     = y_header_bottom - META_H
-y_workout_top     = y_meta_bottom - 0.05 * inch
-y_workout_bottom  = y_workout_top - WORKOUT_H
-y_grid_top        = y_workout_bottom - GRID_TOP_GAP
-y_grid_bottom     = M + FOOTER_H
+y_header_b  = PAGE_H - HEADER_H
+y_meta_b    = y_header_b - META_H
+y_wo_t      = y_meta_b - 0.04 * inch
+y_wo_b      = y_wo_t - WORKOUT_H
+y_grid_t    = y_wo_b - GAP
+y_grid_b    = M + FOOTER_H
 
 # ============================================================
-# HEADER BAND
+# HEADER BAND (shield-black with banyan stripe)
 # ============================================================
 c.setFillColor(INK)
-c.rect(0, y_header_bottom, PAGE_W, HEADER_H, fill=1, stroke=0)
-# thin banyan accent stripe along the bottom of the band
+c.rect(0, y_header_b, PAGE_W, HEADER_H, fill=1, stroke=0)
 c.setFillColor(BANYAN)
-c.rect(0, y_header_bottom - 0.06 * inch, PAGE_W, 0.06 * inch, fill=1, stroke=0)
+c.rect(0, y_header_b - 0.08 * inch, PAGE_W, 0.08 * inch, fill=1, stroke=0)
 
-# logo (or monogram placeholder)
-logo_size = 0.55 * inch
+# logo
+logo_size = 0.60 * inch
 lx = M
-ly = y_header_bottom + (HEADER_H - logo_size) / 2
+ly = y_header_b + (HEADER_H - logo_size) / 2
 if os.path.exists(LOGO):
     c.drawImage(LOGO, lx, ly, width=logo_size, height=logo_size,
                 mask="auto", preserveAspectRatio=True)
 else:
-    c.setStrokeColor(BANYAN); c.setLineWidth(1.2)
+    c.setStrokeColor(BANYAN); c.setLineWidth(2)
     c.rect(lx, ly, logo_size, logo_size, stroke=1, fill=0)
-    c.setFillColor(BANYAN); c.setFont("Helvetica-Bold", 18)
-    c.drawCentredString(lx + logo_size/2, ly + 0.16 * inch, "BT")
+    c.setFillColor(BANYAN); c.setFont("Helvetica-Bold", 20)
+    c.drawCentredString(lx + logo_size/2, ly + 0.18 * inch, "BT")
 
 # wordmark
-wx = lx + logo_size + 0.20 * inch
-c.setFillColor(white); c.setFont("Helvetica-Bold", 24)
-c.drawString(wx, y_header_bottom + 0.30 * inch, "BANYAN THROWDOWN")
-c.setFillColor(HexColor("#B8B8B8")); c.setFont(JP, 10)
-c.drawString(wx, y_header_bottom + 0.13 * inch, "バニヤン・スローダウン")
+wx = lx + logo_size + 0.22 * inch
+c.setFillColor(white); c.setFont("Helvetica-Bold", 26)
+c.drawString(wx, y_header_b + 0.32 * inch, "BANYAN THROWDOWN")
+c.setFillColor(HexColor("#CFCFCF")); c.setFont(JP, 11)
+c.drawString(wx, y_header_b + 0.12 * inch, "バニヤン・スローダウン")
 
-# right side of header
-c.setFillColor(white); c.setFont("Helvetica-Bold", 9)
-c.drawRightString(PAGE_W - M, y_header_bottom + 0.42 * inch, "OFFICIAL JUDGE SCORECARD")
-c.setFillColor(HexColor("#B8B8B8")); c.setFont(JP, 9)
-c.drawRightString(PAGE_W - M, y_header_bottom + 0.27 * inch, "公式ジャッジ採点カード")
-c.setFillColor(white); c.setFont("Helvetica", 8)
-c.drawRightString(PAGE_W - M, y_header_bottom + 0.10 * inch,
+# right header
+c.setFillColor(white); c.setFont("Helvetica-Bold", 10)
+c.drawRightString(PAGE_W - M, y_header_b + 0.48 * inch, "OFFICIAL JUDGE SCORECARD")
+c.setFillColor(HexColor("#CFCFCF")); c.setFont(JP, 9)
+c.drawRightString(PAGE_W - M, y_header_b + 0.31 * inch, "公式ジャッジ採点カード")
+c.setFillColor(ACCENT); c.setFont("Helvetica-Bold", 9)
+c.drawRightString(PAGE_W - M, y_header_b + 0.12 * inch,
                   "4/25 (Sat)  ·  @banyan_throwdown")
 
 # ============================================================
-# META ROW (Event title + heat/division/start)
+# META ROW
 # ============================================================
-meta_y_mid = y_meta_bottom + META_H / 2
+c.setFillColor(GRAY_L)
+c.rect(0, y_meta_b, PAGE_W, META_H, fill=1, stroke=0)
 
-# Event number in orange
-c.setFillColor(ACCENT); c.setFont("Helvetica-Bold", 28)
-c.drawString(M, meta_y_mid - 0.14 * inch, "EVENT 1")
+meta_y_mid = y_meta_b + META_H / 2
 
-# Event subtitle (EN big, JP small below)
-ex = M + 1.75 * inch
-c.setFillColor(INK); c.setFont("Helvetica-Bold", 15)
-c.drawString(ex, meta_y_mid + 0.02 * inch, "10-Minute AMRAP")
-c.setFillColor(MUTED); c.setFont(JP, 9)
+c.setFillColor(ACCENT); c.setFont("Helvetica-Bold", 30)
+c.drawString(M, meta_y_mid - 0.13 * inch, "EVENT 1")
+
+ex = M + 1.85 * inch
+c.setFillColor(INK); c.setFont("Helvetica-Bold", 16)
+c.drawString(ex, meta_y_mid + 0.03 * inch, "10-Minute AMRAP")
+c.setFillColor(MUTED); c.setFont(JP, 10)
 c.drawString(ex, meta_y_mid - 0.18 * inch, "10分間 AMRAP")
 
-# Right meta blocks — EN labels only (universal)
 meta = [("HEAT", "1"), ("DIVISION", "Scaled (F)"), ("START", "9:00")]
-block_w = 1.50 * inch
+block_w = 1.55 * inch
 bx = PAGE_W - M - block_w * len(meta)
-for label, val in meta:
-    c.setFillColor(MUTED); c.setFont("Helvetica-Bold", 7.5)
-    c.drawString(bx, meta_y_mid + 0.14 * inch, label)
-    c.setFillColor(INK); c.setFont("Helvetica-Bold", 17)
-    c.drawString(bx, meta_y_mid - 0.14 * inch, val)
+for i, (label, val) in enumerate(meta):
+    if i > 0:
+        c.setStrokeColor(GRAY_M); c.setLineWidth(0.6)
+        c.line(bx - 0.02 * inch, y_meta_b + 0.12 * inch,
+               bx - 0.02 * inch, y_meta_b + META_H - 0.12 * inch)
+    c.setFillColor(MUTED); c.setFont("Helvetica-Bold", 8)
+    c.drawString(bx, meta_y_mid + 0.17 * inch, label)
+    c.setFillColor(INK); c.setFont("Helvetica-Bold", 19)
+    c.drawString(bx, meta_y_mid - 0.15 * inch, val)
     bx += block_w
 
-# thin divider below meta
-c.setStrokeColor(INK); c.setLineWidth(0.6)
-c.line(M, y_meta_bottom, PAGE_W - M, y_meta_bottom)
+c.setStrokeColor(INK); c.setLineWidth(1.2)
+c.line(0, y_meta_b, PAGE_W, y_meta_b)
 
 # ============================================================
-# WORKOUT PANEL
+# WORKOUT PANEL — banyan header bar, white body
 # ============================================================
-c.setStrokeColor(INK); c.setLineWidth(0.8)
-c.rect(M, y_workout_bottom, PAGE_W - 2*M, WORKOUT_H, stroke=1, fill=0)
-
-# left edge accent
-c.setFillColor(BANYAN)
-c.rect(M, y_workout_bottom, 0.08 * inch, WORKOUT_H, fill=1, stroke=0)
-
-# heading (bilingual)
-tx = M + 0.25 * inch
-c.setFillColor(INK); c.setFont("Helvetica-Bold", 11)
-c.drawString(tx, y_workout_top - 0.22 * inch,
+# header strip (banyan green)
+wh_h = 0.34 * inch
+c.setFillColor(BANYAN_D)
+c.rect(M, y_wo_t - wh_h, PAGE_W - 2*M, wh_h, fill=1, stroke=0)
+c.setFillColor(white); c.setFont("Helvetica-Bold", 11)
+c.drawString(M + 0.15 * inch, y_wo_t - 0.22 * inch,
              "WORKOUT — As many rounds as possible in 10 minutes of:")
-c.setFillColor(MUTED); c.setFont(JP, 9)
-c.drawString(tx, y_workout_top - 0.40 * inch,
-             "ワークアウト — 10分間、以下の種目を可能な限り繰り返す。")
+c.setFont(JP, 9)
+c.drawRightString(PAGE_W - M - 0.15 * inch, y_wo_t - 0.22 * inch,
+                  "ワークアウト ー 10分間、以下の種目を可能な限り繰り返す。")
 
-# movement rows — explicit stack, 0.26" per movement (0.14" EN + 0.12" JP)
-en_y = y_workout_top - 0.60 * inch
+# body
+body_t = y_wo_t - wh_h
+body_b = y_wo_b
+c.setStrokeColor(INK); c.setLineWidth(1.2)
+c.rect(M, body_b, PAGE_W - 2*M, body_t - body_b, stroke=1, fill=0)
+# (redraw top border aligned with the green strip)
+c.setFillColor(INK); c.setFont("Helvetica-Bold", 12)
+
+en_y = body_t - 0.28 * inch
 for reps, en, jp in movements:
-    c.setFillColor(INK); c.setFont("Helvetica-Bold", 12)
-    c.drawString(tx + 0.05 * inch, en_y, reps)
-    c.setFont("Helvetica", 11)
-    c.drawString(tx + 0.55 * inch, en_y, en)
-    c.setFillColor(MUTED); c.setFont(JP, 8)
-    c.drawString(tx + 0.55 * inch, en_y - 0.13 * inch, jp)
-    en_y -= 0.26 * inch
+    c.setFillColor(INK); c.setFont("Helvetica-Bold", 13)
+    c.drawString(M + 0.30 * inch, en_y, reps)
+    c.setFont("Helvetica", 12)
+    c.drawString(M + 0.90 * inch, en_y, en)
+    c.setFillColor(MUTED); c.setFont(JP, 8.5)
+    c.drawString(M + 0.90 * inch, en_y - 0.14 * inch, jp)
+    en_y -= 0.28 * inch
 
 # ============================================================
 # LANE GRID
 # ============================================================
 n = len(lanes)
 col_w = (PAGE_W - 2*M) / n
-grid_h = y_grid_top - y_grid_bottom
+grid_h = y_grid_t - y_grid_b
 
-# outer border
-c.setStrokeColor(INK); c.setLineWidth(0.8)
-c.rect(M, y_grid_bottom, PAGE_W - 2*M, grid_h, stroke=1, fill=0)
+# outer frame
+c.setStrokeColor(INK); c.setLineWidth(1.5)
+c.rect(M, y_grid_b, PAGE_W - 2*M, grid_h, stroke=1, fill=0)
 
-# column head
-head_h = 0.45 * inch
+# column headers — banyan-green lane tab on top of black name strip
+tab_h = 0.20 * inch    # green tab with LANE #
+name_h = 0.38 * inch   # black strip with athlete name
+head_h = tab_h + name_h
+
 for i, (lane, name) in enumerate(lanes):
     x0 = M + i * col_w
+    # green tab
+    c.setFillColor(BANYAN)
+    c.rect(x0, y_grid_t - tab_h, col_w, tab_h, fill=1, stroke=0)
+    c.setFillColor(white); c.setFont("Helvetica-Bold", 9)
+    c.drawString(x0 + 0.10 * inch, y_grid_t - 0.14 * inch, f"LANE {lane}")
+    c.setFont(JP, 8)
+    c.drawRightString(x0 + col_w - 0.10 * inch, y_grid_t - 0.14 * inch, f"レーン{lane}")
+    # black name strip
     c.setFillColor(INK)
-    c.rect(x0, y_grid_top - head_h, col_w, head_h, fill=1, stroke=0)
-    c.setFillColor(HexColor("#CFCFCF")); c.setFont("Helvetica-Bold", 8)
-    c.drawString(x0 + 0.10 * inch, y_grid_top - 0.16 * inch, f"LANE {lane}")
+    c.rect(x0, y_grid_t - head_h, col_w, name_h, fill=1, stroke=0)
     c.setFillColor(white)
-    # auto-shrink long names to fit col width
     max_w = col_w - 0.20 * inch
-    fs = 12
-    while fs > 8 and c.stringWidth(name, "Helvetica-Bold", fs) > max_w:
+    fs = 13
+    while fs > 9 and c.stringWidth(name, "Helvetica-Bold", fs) > max_w:
         fs -= 0.5
     c.setFont("Helvetica-Bold", fs)
-    c.drawString(x0 + 0.10 * inch, y_grid_top - 0.36 * inch, name)
+    c.drawString(x0 + 0.10 * inch, y_grid_t - head_h + 0.13 * inch, name)
 
-# vertical dividers for body
-c.setStrokeColor(INK); c.setLineWidth(0.6)
+# vertical dividers below the header
+c.setStrokeColor(INK); c.setLineWidth(0.8)
 for i in range(1, n):
     xv = M + i * col_w
-    c.line(xv, y_grid_bottom, xv, y_grid_top - head_h)
+    c.line(xv, y_grid_b, xv, y_grid_t - head_h)
 
-# per-lane body: TALLY (big), ROUNDS, EXTRA, TOTAL (box), JUDGE sig, ATHLETE sig
-body_top = y_grid_top - head_h
-body_h   = body_top - y_grid_bottom
-# budget (total ≈ body_h):
-TALLY_H  = 1.00 * inch
-NUM_H    = 0.32 * inch   # ROUNDS / EXTRA REPS row
-TOTAL_H  = 0.50 * inch   # TOTAL (boxed)
-SIG_H    = 0.32 * inch   # per signature line (3 lines)
-# remainder distributed automatically
+# per-lane body
+body_top = y_grid_t - head_h
+
+# budget per field (sums to ~ body_h)
+TALLY_H  = 1.45 * inch
+NUM_H    = 0.46 * inch
+TOTAL_H  = 0.58 * inch
+SIG_H    = 0.33 * inch
+
+def section_label(x_l, y_top, width, height, text, jp_text, tint=None):
+    """Colored/tinted section label bar."""
+    if tint is not None:
+        c.setFillColor(tint)
+        c.rect(x_l, y_top - height, width, height, fill=1, stroke=0)
+    c.setFillColor(INK); c.setFont("Helvetica-Bold", 7.5)
+    c.drawString(x_l + 0.06 * inch, y_top - 0.12 * inch, text)
+    if jp_text:
+        c.setFillColor(MUTED); c.setFont(JP, 7)
+        c.drawRightString(x_l + width - 0.06 * inch,
+                          y_top - 0.12 * inch, jp_text)
 
 for i in range(n):
     x0 = M + i * col_w
-    inner_l = x0 + 0.10 * inch
-    inner_r = x0 + col_w - 0.10 * inch
-    y = body_top - 0.05 * inch
+    inner_l = x0 + 0.08 * inch
+    inner_r = x0 + col_w - 0.08 * inch
+    y = body_top
 
-    # TALLY area
-    c.setFillColor(MUTED); c.setFont("Helvetica-Bold", 7)
-    c.drawString(inner_l, y - 0.10 * inch, "TALLY")
-    c.setFont(JP, 7.5)
-    c.drawString(inner_l + 0.45 * inch, y - 0.10 * inch, "カウント")
-    # light dotted grid inside tally box
-    tb_top = y - 0.14 * inch
-    tb_bot = tb_top - (TALLY_H - 0.18 * inch)
-    c.setStrokeColor(HAIR); c.setLineWidth(0.4)
-    c.rect(inner_l, tb_bot, inner_r - inner_l, tb_top - tb_bot, stroke=1, fill=0)
-    # dot grid for tally marks — visible but not overpowering
+    # --- TALLY area (graph-paper) ---
+    c.setFillColor(GRAY_L)
+    c.rect(inner_l, y - 0.18 * inch, inner_r - inner_l, 0.18 * inch, fill=1, stroke=0)
+    c.setFillColor(INK); c.setFont("Helvetica-Bold", 7.5)
+    c.drawString(inner_l + 0.06 * inch, y - 0.12 * inch, "TALLY")
+    c.setFillColor(MUTED); c.setFont(JP, 7)
+    c.drawRightString(inner_r - 0.06 * inch, y - 0.12 * inch, "カウント")
+    tb_t = y - 0.18 * inch
+    tb_b = tb_t - (TALLY_H - 0.18 * inch)
+    # graph-paper lines
+    c.setStrokeColor(GRAPH); c.setLineWidth(0.4)
     step = 0.14 * inch
-    c.setFillColor(HexColor("#BFBFBF"))
-    yy = tb_top - step
-    while yy > tb_bot + 0.02 * inch:
-        xx = inner_l + step
-        while xx < inner_r - 0.02 * inch:
-            c.circle(xx, yy, 0.55, stroke=0, fill=1)
-            xx += step
+    yy = tb_t - step
+    while yy > tb_b + 0.02 * inch:
+        c.line(inner_l + 0.02 * inch, yy, inner_r - 0.02 * inch, yy)
         yy -= step
+    xx = inner_l + step
+    while xx < inner_r - 0.02 * inch:
+        c.line(xx, tb_t - 0.02 * inch, xx, tb_b + 0.02 * inch)
+        xx += step
+    # frame
+    c.setStrokeColor(INK); c.setLineWidth(0.8)
+    c.rect(inner_l, tb_b, inner_r - inner_l, tb_t - tb_b, stroke=1, fill=0)
+    y = tb_b - 0.04 * inch
 
-    y = tb_bot - 0.08 * inch
-
-    # ROUNDS + EXTRA REPS side by side
+    # --- ROUNDS + EXTRA REPS side by side ---
     half = (inner_r - inner_l - 0.06 * inch) / 2
-    c.setFillColor(MUTED); c.setFont("Helvetica-Bold", 7)
-    c.drawString(inner_l, y - 0.10 * inch, "ROUNDS")
-    c.drawString(inner_l + half + 0.06 * inch, y - 0.10 * inch, "EXTRA REPS")
-    # boxes
-    c.setStrokeColor(INK); c.setLineWidth(0.6)
-    c.rect(inner_l, y - NUM_H, half, NUM_H - 0.12 * inch, stroke=1, fill=0)
-    c.rect(inner_l + half + 0.06 * inch, y - NUM_H, half, NUM_H - 0.12 * inch,
+    c.setFillColor(GRAY_L)
+    c.rect(inner_l, y - 0.18 * inch, half, 0.18 * inch, fill=1, stroke=0)
+    c.rect(inner_l + half + 0.06 * inch, y - 0.18 * inch, half, 0.18 * inch,
+           fill=1, stroke=0)
+    c.setFillColor(INK); c.setFont("Helvetica-Bold", 7.5)
+    c.drawString(inner_l + 0.06 * inch, y - 0.12 * inch, "ROUNDS")
+    c.drawString(inner_l + half + 0.12 * inch, y - 0.12 * inch, "EXTRA REPS")
+    # number boxes
+    c.setStrokeColor(INK); c.setLineWidth(1.0)
+    c.rect(inner_l, y - NUM_H, half, NUM_H - 0.18 * inch, stroke=1, fill=0)
+    c.rect(inner_l + half + 0.06 * inch, y - NUM_H, half, NUM_H - 0.18 * inch,
            stroke=1, fill=0)
-    y = y - NUM_H - 0.06 * inch
+    y = y - NUM_H - 0.05 * inch
 
-    # TOTAL REPS — emphasized green box
-    c.setFillColor(INK); c.setFont("Helvetica-Bold", 8)
-    c.drawString(inner_l, y - 0.10 * inch, "TOTAL REPS")
-    c.setStrokeColor(BANYAN2); c.setLineWidth(1.5)
-    c.rect(inner_l, y - TOTAL_H, inner_r - inner_l, TOTAL_H - 0.14 * inch,
-           stroke=1, fill=0)
+    # --- TOTAL REPS (banyan-filled header + tinted green fill box) ---
+    c.setFillColor(BANYAN_D)
+    c.rect(inner_l, y - 0.20 * inch, inner_r - inner_l, 0.20 * inch,
+           fill=1, stroke=0)
+    c.setFillColor(white); c.setFont("Helvetica-Bold", 8)
+    c.drawString(inner_l + 0.06 * inch, y - 0.13 * inch, "TOTAL REPS")
+    c.setFont(JP, 7.5)
+    c.drawRightString(inner_r - 0.06 * inch, y - 0.13 * inch, "合計レップ")
+    # big box with pale green fill
+    c.setFillColor(BANYAN_L)
+    c.rect(inner_l, y - TOTAL_H, inner_r - inner_l, TOTAL_H - 0.20 * inch,
+           fill=1, stroke=0)
+    c.setStrokeColor(BANYAN_D); c.setLineWidth(1.6)
+    c.rect(inner_l, y - TOTAL_H, inner_r - inner_l, TOTAL_H - 0.20 * inch,
+           fill=0, stroke=1)
     y = y - TOTAL_H - 0.04 * inch
 
-    # three separate signature lines: judge name, judge sig, athlete sig
-    for label in ("JUDGE NAME  (print)", "JUDGE  (signature)", "ATHLETE  (signature)"):
+    # --- 3 signature lines ---
+    for label, jp_lbl in [
+        ("JUDGE NAME  (print)",  "ジャッジ氏名"),
+        ("JUDGE  (signature)",   "ジャッジ サイン"),
+        ("ATHLETE  (signature)", "選手 サイン"),
+    ]:
         c.setFillColor(MUTED); c.setFont("Helvetica-Bold", 7)
         c.drawString(inner_l, y - 0.10 * inch, label)
-        c.setStrokeColor(HexColor("#888888")); c.setLineWidth(0.5)
-        c.line(inner_l, y - SIG_H + 0.06 * inch, inner_r, y - SIG_H + 0.06 * inch)
+        c.setFillColor(HexColor("#888888")); c.setFont(JP, 6.5)
+        c.drawRightString(inner_r, y - 0.10 * inch, jp_lbl)
+        c.setStrokeColor(INK); c.setLineWidth(0.7)
+        c.line(inner_l, y - SIG_H + 0.05 * inch, inner_r, y - SIG_H + 0.05 * inch)
         y -= SIG_H
 
 # ============================================================
-# FOOTER
+# FOOTER  (shaded band)
 # ============================================================
-fy = M + 0.06 * inch
-c.setFillColor(INK); c.setFont("Helvetica", 7.5)
-c.drawString(M, fy + 0.18 * inch,
+c.setFillColor(GRAY_L)
+c.rect(0, 0, PAGE_W, FOOTER_H - 0.05 * inch, fill=1, stroke=0)
+c.setStrokeColor(INK); c.setLineWidth(1.0)
+c.line(0, FOOTER_H - 0.05 * inch, PAGE_W, FOOTER_H - 0.05 * inch)
+
+c.setFillColor(INK); c.setFont("Helvetica-Bold", 8)
+c.drawString(M, 0.24 * inch,
              "Submit to the scoring table immediately after the heat.  "
              "Scores are final once signed.")
-c.setFillColor(MUTED); c.setFont(JP, 8)
-c.drawString(M, fy + 0.04 * inch,
+c.setFillColor(MUTED); c.setFont(JP, 8.5)
+c.drawString(M, 0.10 * inch,
              "ヒート終了後、速やかに採点テーブルへご提出ください。署名後のスコアは確定となります。")
-c.setFillColor(MUTED); c.setFont("Helvetica-Bold", 8)
-c.drawRightString(PAGE_W - M, fy + 0.10 * inch, "E1 · H1 · Scaled (F)")
+c.setFillColor(INK); c.setFont("Helvetica-Bold", 9)
+c.drawRightString(PAGE_W - M, 0.17 * inch, "E1  ·  H1  ·  Scaled (F)")
 
 c.showPage()
 c.save()
