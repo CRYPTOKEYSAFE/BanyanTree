@@ -233,7 +233,11 @@ def render_brief(judge_name, judge_jp, assignments, out_pdf):
 # ---- run for both judges ----
 wb = load_workbook()
 
-for judge_en, judge_jp in [("Anthony", "アンソニー"), ("Takaya", "タカヤ")]:
+for judge_en, judge_jp in [
+    ("Anthony", "アンソニー"),
+    ("Takaya",  "タカヤ"),
+    ("Zen",     "ゼン・宮里"),
+]:
     assigns = load_assignments(wb, judge_en)
     out_pdf = os.path.join(HERE, f"JudgeBrief_{judge_en}.pdf")
     render_brief(judge_en, judge_jp, assigns, out_pdf)
